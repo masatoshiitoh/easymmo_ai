@@ -1,0 +1,14 @@
+%% -*- erlang -*-
+{application, easymmo_ai,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  riak_core
+                 ]},
+  {mod, { easymmo_ai_app, []}},
+  {env, []}
+ ]}.
