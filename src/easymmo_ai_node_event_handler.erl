@@ -25,13 +25,21 @@
 init([]) ->
     {ok, #state{}}.
 
+handle_event({ring_update, _Ring}, State) ->
+    Members = riak_core_ring:active_members(_Ring),
+    io:format("ring update ~p~n",[Members]),
+    {ok, State};
+
 handle_event({service_update, _Services}, State) ->
+    io:format("service_update handle_call: ~p~n",[_Services]),
     {ok, State}.
 
 handle_call(_Event, State) ->
+    io:format("easymmo_ai_node_event_handler handle_call: ~p~n",[_Event]),
     {ok, ok, State}.
 
 handle_info(_Info, State) ->
+    io:format("easymmo_ai_node_event_handler handle_info: ~p~n",[_Info]),
     {ok, State}.
 
 terminate(_Reason, _State) ->

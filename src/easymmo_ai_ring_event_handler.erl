@@ -26,12 +26,20 @@ init([]) ->
     {ok, #state{}}.
 
 handle_event({ring_update, _Ring}, State) ->
+	Members = riak_core_ring:active_members(_Ring),
+	io:format("ring update ~p~n",[Members]),
+    {ok, State};
+
+handle_event(_Event, State) ->
+	io:format("handle_event ~p~n",[_Event]),
     {ok, State}.
 
 handle_call(_Event, State) ->
+	io:format("handle_call ~p~n",[_Event]),
     {ok, ok, State}.
 
 handle_info(_Info, State) ->
+	io:format("handle_info ~p~n",[_Info]),
     {ok, State}.
 
 terminate(_Reason, _State) ->
