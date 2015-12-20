@@ -56,11 +56,10 @@ get_all_neighbors(Id) ->
 make_state(ByIdDict, ByMapDict) ->
 	#state{by_id = ByIdDict, by_map = ByMapDict}.
 
-%% move in same map.
-	%%when is_record(OldValue, info),
-	%%	is_record(NewValue, info),
-	%%	OldValue#info.map == NewValue#info.map ->
-update_all_state(OldValue, NewValue, State) ->
+
+%% set new 
+update_all_state(undefined, NewValue, State)
+	when is_record(NewValue, info) ->
 
 	#state{by_id = ByIdDict, by_map = ByMapDict} = State,
 	Id = NewValue#info.id,
@@ -73,13 +72,49 @@ update_all_state(OldValue, NewValue, State) ->
 	NewByIdDict = dict:store(Id, NewValue, ByIdDict),
 
 	NewState = #state{by_id = NewByIdDict, by_map = NewByMapDict},
-	io:format("~p~n", [NewState]),
+	NewState;
+
+%% move in same map.
+update_all_state(OldValue, NewValue, State)
+	when is_record(OldValue, info),
+		is_record(NewValue, info),
+		OldValue#info.map == NewValue#info.map ->
+
+	#state{by_id = ByIdDict, by_map = ByMapDict} = State,
+	Id = NewValue#info.id,
+	MapId = NewValue#info.map,
+
+	InfoList = get_info_list_by_map(MapId, State),
+	NewInfoList = lists:keystore(Id, 2, InfoList, NewValue),
+
+	NewByMapDict = dict:store(MapId, NewInfoList, ByMapDict),
+	NewByIdDict = dict:store(Id, NewValue, ByIdDict),
+
+	NewState = #state{by_id = NewByIdDict, by_map = NewByMapDict},
 	NewState;
 
 %% move to another map.
 update_all_state(OldValue, NewValue, State) ->
-	State.
 
+	#state{by_id = ByIdDict, by_map = ByMapDict} = State,
+	Id = NewValue#info.id,
+
+	NewMapId = NewValue#info.map,
+	OldMapId = OldValue#info.map,
+
+
+	NewInfoList1 = get_info_list_by_map(NewMapId, State),
+	NewInfoList2 = lists:keystore(Id, 2, NewInfoList1, NewValue),
+
+	OldInfoList1 = get_info_list_by_map(OldMapId, State),
+	OldInfoList2 = lists:keydelete(Id, 2, OldInfoList1),
+
+	ByMapDict1 = dict:store(NewMapId, NewInfoList2, ByMapDict),
+	ByMapDict2 = dict:store(OldMapId, OldInfoList2, ByMapDict1),
+	NewByIdDict = dict:store(Id, NewValue, ByIdDict),
+
+	NewState = #state{by_id = NewByIdDict, by_map = ByMapDict2},
+	NewState.
 
 get_map_by_id(Id, State) ->
 	case dict:find(Id, State#state.by_id) of

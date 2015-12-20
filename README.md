@@ -15,7 +15,6 @@ following files:
 
 ## TODO
 ---------------------
-* make small, local black board service.
-  * it is named 'tiny_maxwell'. maxwell is for 'J.C.Maxwell'.
+* make small, local black board service 'tiny_maxwell'.
 * make small lua script - interact with black board.
 
