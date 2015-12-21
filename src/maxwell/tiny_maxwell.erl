@@ -4,6 +4,8 @@
 -export([start_link/0]).
 -export([init/1, handle_call/3, handle_cast/2]).
 
+-export([test/0]).
+
 -record(info, {id, map, x, y}).
 -record(state, {by_id, by_map}).
 
@@ -13,15 +15,19 @@
 %%
 
 test() ->
-	Info1_1_1 = #info{id=1, map=1, x=1, y=1},
-	Info1_1_2 = #info{id=1, map=1, x=2, y=2},
-	Info1_2_1 = #info{id=1, map=2, x=1, y=1},
-	Info2_1_1 = #info{id=2, map=1, x=1, y=1},
-	Info2_2_2 = #info{id=2, map=2, x=2, y=1},
-	set_info(1, Info1_1_1).
+	start_link(),
+	Info1_1_1 = #info{id=1, map=m1, x=101, y=101},
+	Info1_1_2 = #info{id=1, map=m1, x=102, y=102},
+	Info1_2_1 = #info{id=1, map=m2, x=101, y=101},
+	Info2_1_1 = #info{id=2, map=m1, x=101, y=101},
+	Info2_2_2 = #info{id=2, map=m2, x=102, y=101},
+	set_info(1, Info1_1_1),
+	set_info(1, Info1_1_2),
+	set_info(2, Info2_1_1).
 
 get_info(Id) ->
-	gen_server:call(?MODULE, {get_info, Id}) .
+	{ok, V} = gen_server:call(?MODULE, {get_info, Id}) ,
+	V.
 
 get_info(Id, Default) ->
 	{ok, V} = gen_server:call(?MODULE, {get_info, Id}) ,
@@ -44,12 +50,28 @@ get_all_neighbors(Id) ->
 %% Internal
 %%
 
+make_state(ByIdDict, ByMapDict) ->
+	#state{by_id = ByIdDict, by_map = ByMapDict}.
+
 %% move in same map.
 update_all_state(OldValue, NewValue, State)
 	when is_record(OldValue, info),
 		is_record(NewValue, info),
 		OldValue#info.map == NewValue#info.map ->
-	State;
+
+	#state{by_id = ByIdDict, by_map = ByMapDict} = State,
+	Id = NewValue#info.id,
+	MapId = NewValue#info.map,
+
+	InfoList = get_info_list_by_map(MapId, State),
+	NewInfoList = lists:keystore(Id, 2, InfoList, NewValue),
+
+	NewByMapDict = dict:store(MapId, NewInfoList, ByMapDict),
+	NewByIdDict = dict:store(Id, NewValue, ByIdDict),
+
+	NewState = #state{by_id = NewByIdDict, by_map = NewByMapDict},
+	io:format("~p~n", [NewState]),
+	NewState;
 
 %% move to another map.
 update_all_state(OldValue, NewValue, State) ->
@@ -67,6 +89,11 @@ get_info_by_id(Id, State) ->
 		error -> undefined
 	end.
 
+get_info_list_by_map(MapId, State) ->
+	case dict:find(MapId, State#state.by_map) of
+		{ok, Value} -> Value;
+		error -> []
+	end.
 %%
 %% Callbacks
 %%
@@ -81,10 +108,7 @@ start_link() ->
 
 handle_call({get_all_neighbors, Id}, _From, State) ->
 	MapId = get_map_by_id(Id, State),
-	Result = case dict:find(MapId, State#state.by_map) of
-		{ok, Value} -> Value;
-		error -> []
-	end,
+	Result = get_info_list_by_map(MapId, State),
 	{reply, {ok, Result}, State};
 
 handle_call({get_info, Id}, _From, State) ->
