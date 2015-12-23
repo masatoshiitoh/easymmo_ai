@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 -export([start_link/0]).
--export([init/1, handle_call/3, handle_cast/2]).
+-export([init/1, handle_call/3]).
 
 -export([test/0]).
 
@@ -22,11 +22,18 @@ test() ->
 	Info2_1_1 = #info{id=2, map=m1, x=101, y=101},
 	Info2_2_2 = #info{id=2, map=m2, x=102, y=101},
 	set_info(1, Info1_1_1),
-	io:format("~p~n", [get_all_neighbors(1)]),
+	io:format("1_1_1 ~p~n", [get_all_neighbors(1)]),
 	set_info(1, Info1_1_2),
-	io:format("~p~n", [get_all_neighbors(1)]),
+	io:format("1_1_2 ~p~n", [get_all_neighbors(1)]),
 	set_info(2, Info2_1_1),
-	io:format("~p~n", [get_all_neighbors(1)]).
+	io:format("1 and 2 ~p~n", [get_all_neighbors(1)]),
+	set_info(2, Info2_2_2),
+	io:format("2_2_2 ~p~n", [get_info(2)]),
+	set_info(1, Info1_2_1),
+	io:format("1 and 2 ~p~n", [get_all_neighbors(1)]),
+	delete_info(1),
+	io:format("not exist 1 in world ~p~n", [get_all_neighbors(1)]),
+	io:format("2_2_2 ~p~n", [get_all_neighbors(2)]) .
 
 get_info(Id) ->
 	{ok, V} = gen_server:call(?MODULE, {get_info, Id}) ,
@@ -52,10 +59,6 @@ get_all_neighbors(Id) ->
 %%
 %% Internal
 %%
-
-make_state(ByIdDict, ByMapDict) ->
-	#state{by_id = ByIdDict, by_map = ByMapDict}.
-
 
 %% set new 
 update_all_state(undefined, NewValue, State)
@@ -151,14 +154,28 @@ handle_call({get_all_neighbors, Id}, _From, State) ->
 	{reply, {ok, Result}, State};
 
 handle_call({get_info, Id}, _From, State) ->
-	{reply, get_info_by_id(Id, State), State};
+	{reply, {ok, get_info_by_id(Id, State)}, State};
 
 handle_call({set_info, Id, Value}, _From, State) when Value#info.id == Id ->
 	OldInfo = get_info_by_id(Id, State), %% get old value
 	NewState = update_all_state(OldInfo, Value, State), %% call recalc
-	{reply, ok, NewState}.
+	{reply, ok, NewState};
 
-handle_cast({delete, Id}, State) ->
-	{noreply, State}.
+handle_call({delete_info, Id}, _From, State) ->
+	#state{by_id = ByIdDict, by_map = ByMapDict} = State,
+
+	OldInfo = get_info_by_id(Id, State), %% get old value
+	OldMapId = OldInfo#info.map,
 
 
+	%% remove from by_map
+	OldInfoList1 = get_info_list_by_map(OldMapId, State),
+	OldInfoList2 = lists:keydelete(Id, 2, OldInfoList1),
+	ByMapDict2 = dict:store(OldMapId, OldInfoList2, ByMapDict),
+
+	%% remove from by_id
+	ByIdDict2 = dict:erase(Id, ByIdDict),
+
+	NewState = #state{by_id = ByIdDict2, by_map = ByMapDict2},
+
+	{reply, {ok, OldInfo}, NewState}.
