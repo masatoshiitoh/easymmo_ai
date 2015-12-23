@@ -22,8 +22,11 @@ test() ->
 	Info2_1_1 = #info{id=2, map=m1, x=101, y=101},
 	Info2_2_2 = #info{id=2, map=m2, x=102, y=101},
 	set_info(1, Info1_1_1),
+	io:format("~p~n", [get_all_neighbors(1)]),
 	set_info(1, Info1_1_2),
-	set_info(2, Info2_1_1).
+	io:format("~p~n", [get_all_neighbors(1)]),
+	set_info(2, Info2_1_1),
+	io:format("~p~n", [get_all_neighbors(1)]).
 
 get_info(Id) ->
 	{ok, V} = gen_server:call(?MODULE, {get_info, Id}) ,
@@ -54,10 +57,10 @@ make_state(ByIdDict, ByMapDict) ->
 	#state{by_id = ByIdDict, by_map = ByMapDict}.
 
 %% move in same map.
-update_all_state(OldValue, NewValue, State)
-	when is_record(OldValue, info),
-		is_record(NewValue, info),
-		OldValue#info.map == NewValue#info.map ->
+	%%when is_record(OldValue, info),
+	%%	is_record(NewValue, info),
+	%%	OldValue#info.map == NewValue#info.map ->
+update_all_state(OldValue, NewValue, State) ->
 
 	#state{by_id = ByIdDict, by_map = ByMapDict} = State,
 	Id = NewValue#info.id,
@@ -76,6 +79,7 @@ update_all_state(OldValue, NewValue, State)
 %% move to another map.
 update_all_state(OldValue, NewValue, State) ->
 	State.
+
 
 get_map_by_id(Id, State) ->
 	case dict:find(Id, State#state.by_id) of
