@@ -11,10 +11,12 @@ following files:
   * Implementation of the riak_core_vnode behaviour
 * `src/easymmo_ai.erl`
   * Public API for interacting with your vnode
-
+## DONE
+---------------------
+* make small, local black board service 'tiny_maxwell'.
 
 ## TODO
 ---------------------
-* make small, local black board service 'tiny_maxwell'.
+* make blackboard starter in easymmo_ai_vnode.erl.
 * make small lua script - interact with black board.
 
