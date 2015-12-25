@@ -3,11 +3,18 @@
 -include_lib("riak_core/include/riak_core_vnode.hrl").
 
 -export([
+	test/0,
 	run/0,
 	new_instance/1,
 	register_script/2,
 	action/2,
 	get_current/0,
+
+	blackboard_start/0,
+	blackboard_set_info/2,
+	blackboard_get_info/1,
+	blackboard_delete_info/1,
+	blackboard_get_all_neighbors/1,
 
 	ping/0,
 	lock_addnew/2,
@@ -17,11 +24,18 @@
 	]).
 
 -ignore_xref([
+	test/0,
 	run/0,
 	new_instance/1,
 	register_script/2,
 	action/2,
 	get_current/0,
+
+	blackboard_start/0,
+	blackboard_set_info/2,
+	blackboard_get_info/1,
+	blackboard_delete_info/1,
+	blackboard_get_all_neighbors/1,
 
 	ping/0,
 	lock_addnew/2,
@@ -30,10 +44,32 @@
 	lookup/1
 	]).
 
+-record(info, {id, map, x, y}).
+-record(state, {by_id, by_map}).
 %% Public API
 
 %% @doc Pings a random vnode to make sure communication is functional
 
+test() ->
+	blackboard_start(),
+	Info1_1_1 = #info{id=1, map=m1, x=101, y=101},
+	Info1_1_2 = #info{id=1, map=m1, x=102, y=102},
+	Info1_2_1 = #info{id=1, map=m2, x=101, y=101},
+	Info2_1_1 = #info{id=2, map=m1, x=101, y=101},
+	Info2_2_2 = #info{id=2, map=m2, x=102, y=101},
+	blackboard_set_info(1, Info1_1_1),
+	io:format("1_1_1 ~p~n", [blackboard_get_all_neighbors(1)]),
+	blackboard_set_info(1, Info1_1_2),
+	io:format("1_1_2 ~p~n", [blackboard_get_all_neighbors(1)]),
+	blackboard_set_info(2, Info2_1_1),
+	io:format("1 and 2 ~p~n", [blackboard_get_all_neighbors(1)]),
+	blackboard_set_info(2, Info2_2_2),
+	io:format("2_2_2 ~p~n", [blackboard_get_info(2)]),
+	blackboard_set_info(1, Info1_2_1),
+	io:format("1 and 2 ~p~n", [blackboard_get_all_neighbors(1)]),
+	blackboard_delete_info(1),
+	io:format("not exist 1 in world ~p~n", [blackboard_get_all_neighbors(1)]),
+	io:format("2_2_2 ~p~n", [blackboard_get_all_neighbors(2)]) .
 
 run() ->
 	% separately parse, then execute
@@ -83,7 +119,6 @@ start_watch(Dest) ->ng.
 stop_watch(Dest) ->ng.
 
 %% prepare blackboard
-start_blackboard(BBName) -> ng.
 clear_blackboard(BBName) -> ng.
 get_blackboard(BBName) -> ng.
 
@@ -93,6 +128,36 @@ ping() ->
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
     [{IndexNode, _Type}] = PrefList,
     riak_core_vnode_master:sync_spawn_command(IndexNode, ping, easymmo_ai_vnode_master).
+
+blackboard_start() ->
+    DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
+
+blackboard_get_info(Id) ->
+    DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
+
+blackboard_set_info(Id, Value) ->
+    DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_set_info, easymmo_ai_vnode_master).
+
+blackboard_delete_info(Id) ->
+    DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
+
+blackboard_get_all_neighbors(Id) ->
+    DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
 
 get_state(Name) ->
     DocIdx = riak_core_util:chash_key({<<"character">>, list_to_binary(Name)}),

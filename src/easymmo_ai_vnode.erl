@@ -35,6 +35,39 @@ handle_command(ping, _Sender, State) ->
     ?PRINT({ping, State}),
     {reply, {pong, State#state.partition}, State};
 
+%% start blackboard service.
+handle_command(blackboard_start, _Sender, State) ->
+	{ok, Pid} = tiny_maxwell:start_link(),
+	NewPids = dict:store(blackboard, Pid, State#state.pids),
+    NewState = State#state{pids = NewPids},
+    ?PRINT({blackboard_start, Pid}),
+    {reply, {{blackboard_start, Pid}, State#state.partition}, NewState};
+
+%% blackboard set_info.
+handle_command({blackboard_set_info, Id, Value}, _Sender, State) ->
+	Pid = dict:fetch(blackboard, State#state.pids),
+	Result = tiny_maxwell:set_info(Pid, Id, Value),
+    {reply, {{blackboard_set_info, Pid}, Result, State#state.partition}, State};
+
+%% blackboard get_info.
+handle_command({blackboard_get_info, Id, Value}, _Sender, State) ->
+	Pid = dict:fetch(blackboard, State#state.pids),
+	Result = tiny_maxwell:get_info(Pid, Id),
+    {reply, {{blackboard_get_info, Pid}, Result, State#state.partition}, State};
+
+%% blackboard delete_info.
+handle_command({blackboard_delete_info, Id, Value}, _Sender, State) ->
+	Pid = dict:fetch(blackboard, State#state.pids),
+	Result = tiny_maxwell:delete_info(Pid, Id),
+    {reply, {{blackboard_delete_info, Pid}, Result, State#state.partition}, State};
+
+%% blackboard get_all_neighbors.
+handle_command({blackboard_get_all_neighbors, Id, Value}, _Sender, State) ->
+	Pid = dict:fetch(blackboard, State#state.pids),
+	Result = tiny_maxwell:get_all_neighbors(Pid, Id),
+    {reply, {{blackboard_get_all_neighbors, Pid}, Result, State#state.partition}, State};
+
+
 %% Name is new comer.
 handle_command({addnew, Name, Code}, _Sender, State) ->
 	{ok, Pid} = easymmo_ai_persona:start_link(Code),
@@ -64,6 +97,7 @@ handle_command(Message, _Sender, State) ->
     {noreply, State}.
 
 handle_handoff_command(_Message, _Sender, State) ->
+    ?PRINT({handle_handoff_command, _Message}),
     {noreply, State}.
 
 handoff_starting(_TargetNode, State) ->
@@ -83,6 +117,7 @@ handle_handoff_data(_Data, State) ->
     {reply, ok, State}.
 
 encode_handoff_item(_ObjectName, _ObjectValue) ->
+    ?PRINT({encode_handoff_item, _ObjectName, _ObjectValue}),
     <<>>.
 
 is_empty(State) ->
@@ -92,9 +127,11 @@ delete(State) ->
     {ok, State}.
 
 handle_coverage(_Req, _KeySpaces, _Sender, State) ->
+    ?PRINT({handle_coverage, _Req, _KeySpaces, _Sender}),
     {stop, not_implemented, State}.
 
 handle_exit(_Pid, _Reason, State) ->
+    ?PRINT({handle_exit, _Pid, _Reason}),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

@@ -6,6 +6,11 @@
 
 -export([test/0]).
 
+-export([set_info/3]).
+-export([get_info/2]).
+-export([delete_info/2]).
+-export([get_all_neighbors/2]).
+
 -record(info, {id, map, x, y}).
 -record(state, {by_id, by_map}).
 
@@ -36,8 +41,11 @@ test() ->
 	io:format("2_2_2 ~p~n", [get_all_neighbors(2)]) .
 
 get_info(Id) ->
-	{ok, V} = gen_server:call(?MODULE, {get_info, Id}) ,
-	V.
+	get_info(?MODULE, Id).
+
+get_info(Pid, Id) when is_pid(Pid) ->
+	{ok, V} = gen_server:call(Pid, {get_info, Id}) ,
+	V;
 
 get_info(Id, Default) ->
 	{ok, V} = gen_server:call(?MODULE, {get_info, Id}) ,
@@ -46,14 +54,23 @@ get_info(Id, Default) ->
 		V -> V
 	end}.
 
-set_info(Id, NewLocation) ->
-	gen_server:call(?MODULE, {set_info, Id, NewLocation}).
+set_info(Pid, Id, NewLocation) ->
+	gen_server:call(Pid, {set_info, Id, NewLocation}).
 
-delete_info(Id) ->
+set_info(Id, NewLocation) ->
+	set_info(?MODULE, Id, NewLocation).
+
+delete_info(Pid, Id) ->
 	gen_server:call(?MODULE, {delete_info, Id}).
 
+delete_info(Id) ->
+	delete_info(?MODULE, Id).
+
+get_all_neighbors(Pid, Id) ->
+	gen_server:call(Pid, {get_all_neighbors, Id}).
+
 get_all_neighbors(Id) ->
-	gen_server:call(?MODULE, {get_all_neighbors, Id}).
+	get_all_neighbors(?MODULE, Id).
 
 
 %%
