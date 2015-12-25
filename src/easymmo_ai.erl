@@ -139,25 +139,25 @@ blackboard_get_info(Id) ->
     DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
     [{IndexNode, _Type}] = PrefList,
-    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
+    riak_core_vnode_master:sync_spawn_command(IndexNode, {blackboard_get_info, Id}, easymmo_ai_vnode_master).
 
 blackboard_set_info(Id, Value) ->
     DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
     [{IndexNode, _Type}] = PrefList,
-    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_set_info, easymmo_ai_vnode_master).
+    riak_core_vnode_master:sync_spawn_command(IndexNode, {blackboard_set_info, Id, Value}, easymmo_ai_vnode_master).
 
 blackboard_delete_info(Id) ->
     DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
     [{IndexNode, _Type}] = PrefList,
-    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
+    riak_core_vnode_master:sync_spawn_command(IndexNode, {blackboard_delete_info, Id}, easymmo_ai_vnode_master).
 
 blackboard_get_all_neighbors(Id) ->
     DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
     [{IndexNode, _Type}] = PrefList,
-    riak_core_vnode_master:sync_spawn_command(IndexNode, blackboard_start, easymmo_ai_vnode_master).
+    riak_core_vnode_master:sync_spawn_command(IndexNode, {blackboard_get_all_neighbors, Id}, easymmo_ai_vnode_master).
 
 get_state(Name) ->
     DocIdx = riak_core_util:chash_key({<<"character">>, list_to_binary(Name)}),

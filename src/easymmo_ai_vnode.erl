@@ -50,19 +50,19 @@ handle_command({blackboard_set_info, Id, Value}, _Sender, State) ->
     {reply, {{blackboard_set_info, Pid}, Result, State#state.partition}, State};
 
 %% blackboard get_info.
-handle_command({blackboard_get_info, Id, Value}, _Sender, State) ->
+handle_command({blackboard_get_info, Id}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:get_info(Pid, Id),
     {reply, {{blackboard_get_info, Pid}, Result, State#state.partition}, State};
 
 %% blackboard delete_info.
-handle_command({blackboard_delete_info, Id, Value}, _Sender, State) ->
+handle_command({blackboard_delete_info, Id}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:delete_info(Pid, Id),
     {reply, {{blackboard_delete_info, Pid}, Result, State#state.partition}, State};
 
 %% blackboard get_all_neighbors.
-handle_command({blackboard_get_all_neighbors, Id, Value}, _Sender, State) ->
+handle_command({blackboard_get_all_neighbors, Id}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:get_all_neighbors(Pid, Id),
     {reply, {{blackboard_get_all_neighbors, Pid}, Result, State#state.partition}, State};
