@@ -16,7 +16,6 @@
 	blackboard_delete_info/1,
 	blackboard_get_all_neighbors/1,
 
-	ping/0,
 	lock_addnew/2,
 	lock_button/2,
 	get_state/1,
@@ -37,7 +36,6 @@
 	blackboard_delete_info/1,
 	blackboard_get_all_neighbors/1,
 
-	ping/0,
 	lock_addnew/2,
 	lock_button/2,
 	get_state/1,
@@ -123,11 +121,6 @@ clear_blackboard(BBName) -> ng.
 get_blackboard(BBName) -> ng.
 
 %% @doc Pings a random vnode to make sure communication is functional
-ping() ->
-    DocIdx = riak_core_util:chash_key({<<"ping">>, term_to_binary(now())}),
-    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
-    [{IndexNode, _Type}] = PrefList,
-    riak_core_vnode_master:sync_spawn_command(IndexNode, ping, easymmo_ai_vnode_master).
 
 blackboard_start() ->
     DocIdx = riak_core_util:chash_key({<<"system">>, <<"blackboard">>}),
