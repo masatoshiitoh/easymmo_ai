@@ -31,10 +31,9 @@ start_vnode(I) ->
 init([Partition]) ->
     {ok, #state { partition=Partition, pids=dict:new() }}.
 
-%% Sample command: respond to a ping
-handle_command(ping, _Sender, State) ->
-    ?PRINT({ping, State}),
-    {reply, {pong, State#state.partition}, State};
+%% -------------------------------------------------------
+%% blackboard access
+%% -------------------------------------------------------
 
 %% start blackboard service.
 handle_command(blackboard_start, _Sender, State) ->
@@ -42,56 +41,60 @@ handle_command(blackboard_start, _Sender, State) ->
 	NewPids = dict:store(blackboard, Pid, State#state.pids),
     NewState = State#state{pids = NewPids},
     ?PRINT({blackboard_start, Pid}),
-    {reply, {{blackboard_start, Pid}, State#state.partition}, NewState};
+    {reply, {ok, Pid}, NewState};
 
 %% blackboard set_info.
 handle_command({blackboard_set_info, Id, Value}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:set_info(Pid, Id, Value),
-    {reply, {{blackboard_set_info, Pid}, Result, State#state.partition}, State};
+    {reply, {ok, Result}, State};
 
 %% blackboard get_info.
 handle_command({blackboard_get_info, Id}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:get_info(Pid, Id),
-    {reply, {{blackboard_get_info, Pid}, Result, State#state.partition}, State};
+    {reply, {ok, Result}, State};
 
 %% blackboard delete_info.
 handle_command({blackboard_delete_info, Id}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:delete_info(Pid, Id),
-    {reply, {{blackboard_delete_info, Pid}, Result, State#state.partition}, State};
+    {reply, {ok, Result}, State};
 
 %% blackboard get_all_neighbors.
 handle_command({blackboard_get_all_neighbors, Id}, _Sender, State) ->
 	Pid = dict:fetch(blackboard, State#state.pids),
 	Result = tiny_maxwell:get_all_neighbors(Pid, Id),
-    {reply, {{blackboard_get_all_neighbors, Pid}, Result, State#state.partition}, State};
+    {reply, {ok, Result}, State};
 
+%% -------------------------------------------------------
+%% luerl gen_server handlers.
+%% -------------------------------------------------------
 
 %% Name is new comer.
-handle_command({addnew, Name, Code}, _Sender, State) ->
-	{ok, Pid} = easymmo_ai_persona:start_link(Code),
+handle_command({new, Name}, _Sender, State) ->
+	{ok, Pid} = worker:start_link(),
 	NewPids = dict:store(Name, Pid, State#state.pids),
     NewState = State#state{pids = NewPids},
-    ?PRINT({addnew, Name, Code}),
-    {reply, {{addnew, Pid}, State#state.partition}, NewState};
+    ?PRINT({new, Name}),
+    {reply, {ok, Pid}, NewState};
 
 %% Find pid associated to Name
-handle_command({button, Name, Button}, _Sender, State) ->
+handle_command({add, Name, N}, _Sender, State) ->
 	Pid = dict:fetch(Name, State#state.pids),
-	Result = easymmo_ai_persona:button(Pid, Button),
-    {reply, {{button, Pid}, Result, State#state.partition}, State};
+	{ok, Result} = worker:add(Pid, N),
+    {reply, {ok, Result}, State};
 
 %% Find pid associated to Name
 handle_command({get_state, Name}, _Sender, State) ->
 	Pid = dict:fetch(Name, State#state.pids),
-    {reply, {{get_state, Pid}, State#state.partition}, State};
+	{ok, Result} = worker:get_state(Pid),
+    {reply, {ok, Result}, State};
 
-%% Find pid associated to Name
-handle_command({lookup, Name}, _Sender, State) ->
+handle_command({set_state, Name, NewState}, _Sender, State) ->
 	Pid = dict:fetch(Name, State#state.pids),
-    {reply, {{lookup, Pid}, State#state.partition}, State};
+	{ok, Result} = worker:set_state(Pid, NewState),
+    {reply, {ok, Result}, State};
 
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
@@ -101,10 +104,10 @@ handle_command(Message, _Sender, State) ->
 object_list(State) ->
 	dict:fetch_keys(State#state.pids).
 
-convtokey(BinName) ->
+make_key(BinName) ->
 	{<<"easymmo_ai">>, BinName}.
 
-gotvalue(BinName, State) ->
+get_value(BinName, State) ->
 	local_get_state(BinName, State).
 
 %% see http://jp.basho.com/posts/technical/understanding-riak_core-building-handoff/
@@ -114,9 +117,9 @@ handle_handoff_command(?FOLD_REQ{foldfun=VisitFun, acc0=Acc0}, _Sender, State) -
 	ObjectBinNames = object_list(State),
 	%% eliding details for now. Don't worry, we'll get to them shortly.
 	Do = fun(BinName, AccIn) ->
-		K = convtokey(BinName),
+		K = make_key(BinName),
 		?PRINT(K),
-		V = gotvalue(BinName, State),
+		V = get_value(BinName, State),
 		?PRINT(V),
 		%%Data = term_to_binary({K, V}),
 		Data = V, %% don't apply XXX_to_binary here.
