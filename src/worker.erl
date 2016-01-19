@@ -6,7 +6,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0]).
+-export([start_link/1]).
 
 -export([add/2]).
 -export([set_state/2]).
@@ -23,8 +23,8 @@
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(N) ->
+    gen_server:start_link(?MODULE, [N], []).
 
 add(Pid, N) -> gen_server:call(Pid, {add, N}).
 
@@ -35,8 +35,9 @@ get_state(Pid) -> gen_server:call(Pid, get_state).
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init(_Args) ->
-    {ok, 0}.
+init(Args) ->
+	[N] = Args,
+    {ok, N}.
 
 handle_call({add, N}, _From, State) ->
 	%% TODO fill code body.

@@ -16,6 +16,11 @@
 	blackboard_delete_info/1,
 	blackboard_get_all_neighbors/1,
 
+	new/1,
+	add/2,
+	get_state/1,
+	set_state/2,
+
 	lock_addnew/2,
 	lock_button/2,
 	get_state/1,
@@ -35,6 +40,11 @@
 	blackboard_get_info/1,
 	blackboard_delete_info/1,
 	blackboard_get_all_neighbors/1,
+
+	new/1,
+	add/2,
+	get_state/1,
+	set_state/2,
 
 	lock_addnew/2,
 	lock_button/2,
@@ -152,11 +162,29 @@ blackboard_get_all_neighbors(Id) ->
     [{IndexNode, _Type}] = PrefList,
     riak_core_vnode_master:sync_spawn_command(IndexNode, {blackboard_get_all_neighbors, Id}, easymmo_ai_vnode_master).
 
+new(Name) ->
+    DocIdx = riak_core_util:chash_key({<<"easymmo_ai">>, list_to_binary(Name)}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+	riak_core_vnode_master:sync_command(IndexNode, {new, Name}, easymmo_ai_vnode_master).
+
+add(Name, N) ->
+    DocIdx = riak_core_util:chash_key({<<"easymmo_ai">>, list_to_binary(Name)}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+	riak_core_vnode_master:sync_command(IndexNode, {add, Name, N}, easymmo_ai_vnode_master).
+
 get_state(Name) ->
-    DocIdx = riak_core_util:chash_key({<<"character">>, list_to_binary(Name)}),
+    DocIdx = riak_core_util:chash_key({<<"easymmo_ai">>, list_to_binary(Name)}),
     PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
     [{IndexNode, _Type}] = PrefList,
 	riak_core_vnode_master:sync_command(IndexNode, {get_state, Name}, easymmo_ai_vnode_master).
+
+set_state(Name, NewWorkerState) ->
+    DocIdx = riak_core_util:chash_key({<<"easymmo_ai">>, list_to_binary(Name)}),
+    PrefList = riak_core_apl:get_primary_apl(DocIdx, 1, easymmo_ai),
+    [{IndexNode, _Type}] = PrefList,
+	riak_core_vnode_master:sync_command(IndexNode, {set_state, Name, NewWorkerState}, easymmo_ai_vnode_master).
 
 lookup(Name) ->
     DocIdx = riak_core_util:chash_key({<<"character">>, list_to_binary(Name)}),
