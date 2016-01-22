@@ -121,7 +121,6 @@ handle_handoff_command(?FOLD_REQ{foldfun=VisitFun, acc0=Acc0}, _Sender, State) -
 		?PRINT(K),
 		V = get_value(BinName, State),
 		?PRINT(V),
-		%%Data = term_to_binary({K, V}),
 		Data = V, %% don't apply XXX_to_binary here.
 		?PRINT(Data),
 		AccOut = VisitFun(K, Data, AccIn),
@@ -151,7 +150,8 @@ handle_handoff_data(Data, State) ->
 	{{<<"easymmo_ai">>, BinName} , WorkerState} = binary_to_term(Data),
 	?PRINT({BinName, WorkerState}),
 	NewState = case dict:find(BinName, State#state.pids) of
-		{ok, _ExistingPid} ->
+		{ok, ExistingPid} ->
+			{ok, _NewWorkerState} = worker:set_state(ExistingPid, WorkerState),
 			State;
 		error ->
 			?PRINT({BinName, WorkerState}),
@@ -162,7 +162,7 @@ handle_handoff_data(Data, State) ->
 %% returns State
 start_and_set_state({BinName, WorkerState}, State) ->
 	?PRINT({start_and_set_state, BinName, WorkerState}),
-	{ok, Pid} = worker:start_link(),
+	{ok, Pid} = worker:start_link(42),
 	{ok, _NewWorkerState} = worker:set_state(Pid, WorkerState),
 	NewPids = dict:store(BinName, Pid, State#state.pids),
 	NewState = State#state{pids = NewPids},
@@ -180,7 +180,19 @@ is_empty(State) ->
 	{dict:size(State#state.pids) == 0, State}.
 
 delete(State) ->
-    {ok, State}.
+	?PRINT({delete, object_list(State)}),
+	NewState = stop_proc(object_list(State), State),
+	?PRINT({deleted, NewState}),
+	{ok, NewState}.
+
+stop_proc([], State) -> State;
+
+stop_proc([BinName|L], State) ->
+	Pid = dict:fetch(BinName, State#state.pids),
+	_Result = stopped = worker:stop(Pid),
+	?PRINT({worker_stop_result, _Result}),
+	NewDict = dict:erase(BinName, State#state.pids),
+	stop_proc(L, State#state{pids = NewDict}).
 
 handle_coverage(_Req, _KeySpaces, _Sender, State) ->
     ?PRINT({handle_coverage, _Req, _KeySpaces, _Sender}),

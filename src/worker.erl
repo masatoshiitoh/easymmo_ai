@@ -7,6 +7,7 @@
 %% ------------------------------------------------------------------
 
 -export([start_link/1]).
+-export([stop/1]).
 
 -export([add/2]).
 -export([set_state/2]).
@@ -25,6 +26,9 @@
 
 start_link(N) ->
     gen_server:start_link(?MODULE, [N], []).
+
+stop(Pid) ->
+    gen_server:call(Pid, stop).
 
 add(Pid, N) -> gen_server:call(Pid, {add, N}).
 
@@ -50,6 +54,9 @@ handle_call({set_state, NewState}, _From, _State) ->
 handle_call(get_state, _From, State) ->
 	%% TODO fill code body.
     {reply, {ok, State}, State};
+
+handle_call(stop, _From, N1) ->
+    {stop, normal, stopped, N1};
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
