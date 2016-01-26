@@ -41,6 +41,8 @@ get_state(Pid) -> gen_server:call(Pid, get_state).
 
 init(Args) ->
 	[N] = Args,
+	%% start lua vm, and load 'module_worker'.
+	%% run init.
     {ok, N}.
 
 handle_call({add, N}, _From, State) ->
