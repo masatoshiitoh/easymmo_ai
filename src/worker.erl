@@ -1,5 +1,8 @@
 -module(worker).
 -behaviour(gen_server).
+-include("easymmo_ai.hrl").
+-include("riak_core_vnode.hrl").
+
 -define(SERVER, ?MODULE).
 
 %% ------------------------------------------------------------------
@@ -19,6 +22,12 @@
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
+
+%% ------------------------------------------------------------------
+%% Record Definitions
+%% ------------------------------------------------------------------
+
+-record(state, {luavm, chunk, counter}).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -41,20 +50,38 @@ get_state(Pid) -> gen_server:call(Pid, get_state).
 
 init(Args) ->
 	[N] = Args,
-	%% start lua vm, and load 'module_worker'.
-	%% run init.
-    {ok, N}.
+
+	{ok, Chunk, _VM} = luerl:load("a = a + 1; return a;"),
+	VM0 = luerl:init(),
+	InitLua = lists:flatten(io_lib:format("a = ~p; return a", [N])),
+	?PRINT({InitLua}),
+	{_Ret1, VM1} = luerl:do(InitLua, VM0),
+
+	%% setup worker gen_server State.
+	State = #state{luavm = VM1, chunk = Chunk, counter = N},
+
+    {ok, State}.
 
 handle_call({add, N}, _From, State) ->
-	%% TODO fill code body.
-    {reply, {ok, N}, State};
+	#state{luavm = VM0, chunk = Chunk, counter = _Counter} = State,
+
+	%% load add code
+	%%AddLuaFile = filename:join([code:priv_dir(easymmo_ai), "lua", "add.lua"]),
+	%%{ok, Chunk, VM1} = luerl:loadfile(AddLuaFile, VM0),
+
+	%% run init.
+	AddNLua = lists:flatten(io_lib:format("a = a+ ~p; return a", [N])),
+	{Ret, VM1} = luerl:do(AddNLua, VM0),
+	[H | T] = Ret,
+
+	NewState = State#state{luavm = VM1, counter = N+1},
+
+    {reply, {ok, H}, NewState};
 
 handle_call({set_state, NewState}, _From, _State) ->
-	%% TODO fill code body.
-    {reply, {ok, NewState} , NewState};
+    {reply, {ok, NewState}, NewState};
 
 handle_call(get_state, _From, State) ->
-	%% TODO fill code body.
     {reply, {ok, State}, State};
 
 handle_call(stop, _From, N1) ->

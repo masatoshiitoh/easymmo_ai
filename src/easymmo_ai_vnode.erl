@@ -73,7 +73,7 @@ handle_command({blackboard_get_all_neighbors, Id}, _Sender, State) ->
 
 %% Name is new comer.
 handle_command({new, Name}, _Sender, State) ->
-	{ok, Pid} = worker:start_link(97),
+	{ok, Pid} = worker:start_link(97.0),
 	NewPids = dict:store(Name, Pid, State#state.pids),
     NewState = State#state{pids = NewPids},
     ?PRINT({new, Name}),
