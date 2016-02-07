@@ -71,12 +71,10 @@ handle_call({add, N}, _From, State) ->
 
 	%% run init.
 	AddNLua = lists:flatten(io_lib:format("a = a+ ~p; return a", [N])),
-	{Ret, VM1} = luerl:do(AddNLua, VM0),
-	[H | T] = Ret,
+	{Ret, VM1} = luerl:do(AddNLua, VM0), %% Lua code returns list of values.
 
 	NewState = State#state{luavm = VM1, counter = N+1},
-
-    {reply, {ok, H}, NewState};
+    {reply, {ok, Ret}, NewState};
 
 handle_call({set_state, NewState}, _From, _State) ->
     {reply, {ok, NewState}, NewState};
