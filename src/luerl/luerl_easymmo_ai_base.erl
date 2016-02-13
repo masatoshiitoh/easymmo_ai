@@ -14,4 +14,4 @@ table() ->
 
 get_all(A,St) -> {[0], St}.
 bar(A,St) -> {[0], St}.
-foo(A,St) -> {[0], St}.
+foo([A,B],St) -> {[<<"foo">>,A,B], St}.

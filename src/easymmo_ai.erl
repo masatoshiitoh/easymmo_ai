@@ -67,9 +67,9 @@ test() ->
 lua_sample() ->
 	% separately parse, then execute
 	State0 = luerl:init(),
-	State1 = luerl:load_module([easymmo_ai], luerl_easymmo_ai_base, State0),
+	State1 = luerl:load_module([ei], luerl_easymmo_ai_base, State0),
 	{ok, Chunk, State2} = luerl:loadfile(
-		filename:join([code:priv_dir(easymmo_ai), "lua", "simple.lua"]),
+		filename:join([code:priv_dir(easymmo_ai), "lua", "sample.lua"]),
 		State1),
 	{Ret, _State3} = luerl:do(Chunk, State2),
 	Ret.
